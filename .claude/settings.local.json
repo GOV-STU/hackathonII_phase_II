@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\".specify/scripts/bash/create-phr.sh\" --title \"Establish Phase II Constitution\" --stage constitution --json)",
+      "Bash(powershell:*)",
+      "Bash(timeout:*)",
+      "Bash(curl -X DELETE http://127.0.0.1:8001/api/v1/todos/b06ec232-7f85-4178-97d3-9a6938e4767a)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(git add -A)"
+    ]
+  }
+}

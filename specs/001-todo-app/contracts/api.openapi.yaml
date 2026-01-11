@@ -1,0 +1,426 @@
+openapi: 3.0.3
+info:
+  title: Todo API
+  description: RESTful API for managing todo items in the Phase II Todo application
+  version: 1.0.0
+  contact:
+    name: Evolution of Todo - Phase II
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: todos
+    description: Todo item operations
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: getHealth
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /todos:
+    get:
+      tags:
+        - todos
+      summary: List all todos
+      description: Retrieve a list of all todo items with optional filtering, searching, and sorting
+      operationId: listTodos
+      parameters:
+        - name: status
+          in: query
+          description: Filter by completion status
+          required: false
+          schema:
+            type: string
+            enum: [pending, completed]
+        - name: priority
+          in: query
+          description: Filter by priority level
+          required: false
+          schema:
+            type: string
+            enum: [high, medium, low]
+        - name: search
+          in: query
+          description: Search text in title and description
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: tag
+          in: query
+          description: Filter by tag (can be specified multiple times)
+          required: false
+          schema:
+            type: string
+            maxLength: 50
+        - name: sort_by
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum: [priority, title, created_at]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Todo'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - todos
+      summary: Create a new todo
+      description: Create a new todo item
+      operationId: createTodo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreate'
+      responses:
+        '201':
+          description: Todo created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /todos/{todo_id}:
+    get:
+      tags:
+        - todos
+      summary: Get a todo by ID
+      description: Retrieve a single todo item by its unique identifier
+      operationId: getTodo
+      parameters:
+        - name: todo_id
+          in: path
+          description: Todo unique identifier (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Todo found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - todos
+      summary: Update a todo
+      description: Update an existing todo item (partial updates supported)
+      operationId: updateTodo
+      parameters:
+        - name: todo_id
+          in: path
+          description: Todo unique identifier (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoUpdate'
+      responses:
+        '200':
+          description: Todo updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - todos
+      summary: Delete a todo
+      description: Permanently delete a todo item
+      operationId: deleteTodo
+      parameters:
+        - name: todo_id
+          in: path
+          description: Todo unique identifier (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Todo deleted successfully
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /todos/{todo_id}/toggle:
+    post:
+      tags:
+        - todos
+      summary: Toggle todo completion status
+      description: Toggle a todo between pending and completed status
+      operationId: toggleTodoStatus
+      parameters:
+        - name: todo_id
+          in: path
+          description: Todo unique identifier (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Todo status toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    TodoStatus:
+      type: string
+      enum:
+        - pending
+        - completed
+      description: Todo completion status
+
+    TodoPriority:
+      type: string
+      enum:
+        - high
+        - medium
+        - low
+      description: Todo priority level
+
+    TodoCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: The main text describing the task
+          example: Buy groceries
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Additional details about the task
+          example: Need milk, eggs, and bread from the store
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+          default: pending
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+          default: medium
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          maxItems: 20
+          description: Categories or labels for organization
+          example: [shopping, urgent]
+
+    TodoUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: The main text describing the task
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Additional details about the task
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          maxItems: 20
+          description: Categories or labels for organization
+
+    Todo:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - tags
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the todo item
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: The main text describing the task
+          example: Buy groceries
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Additional details about the task
+          example: Need milk, eggs, and bread from the store
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+        tags:
+          type: array
+          items:
+            type: string
+          description: Categories or labels for organization
+          example: [shopping, urgent]
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the todo was created (UTC)
+          example: '2026-01-11T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the todo was last modified (UTC)
+          example: '2026-01-11T12:30:00Z'
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: Todo not found
