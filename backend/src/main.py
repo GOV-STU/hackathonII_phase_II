@@ -63,10 +63,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Import routers
 from .api.health import router as health_router
 from .api.todos import router as todos_router
+from .api.auth import router as auth_router
 
 # Register routers
 app.include_router(health_router)
 app.include_router(todos_router)
+app.include_router(auth_router)
 
 
 # Root endpoint
